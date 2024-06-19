@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "polymathSPA",
-    "slug": "polymathSPA",
+    "name": "Polymath",
+    "slug": "Polymath",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
