@@ -22,6 +22,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-font"
+    ],
+    "fonts": [
+      {
+        "name": "Raleway-Regular",
+        "files": [
+          "./assets/fonts/Raleway-VariableFont_wght.ttf"
+        ]
+      }
+    ]
   }
 }

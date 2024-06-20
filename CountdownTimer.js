@@ -1,15 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const CountdownTimer = ({ initialCount }) => {
+const CountdownTimer = ({ initialCount, onComplete }) => {
   const [count, setCount] = useState(initialCount);
+  let timeoutId; // Define timeoutId here
 
   useEffect(() => {
-    if (count > 0) {
-      const timer = setTimeout(() => setCount(count - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [count]);
+    // Function to handle countdown logic
+    const handleCountdown = () => {
+      if (count > 0) {
+        const newCount = count - 1;
+        setCount(newCount);
+        timeoutId = setTimeout(handleCountdown, 1000); // Assign the timeout ID to timeoutId
+      } else {
+        onComplete(); // Call onComplete when countdown reaches 0
+      }
+    };
+
+    // Start the countdown
+    handleCountdown();
+
+    // Cleanup function to clear the timeout when the component unmounts
+    // or when initialCount changes
+    return () => {
+      clearTimeout(timeoutId); // Use the defined timeoutId here
+      onComplete();
+    };
+  }, [count, onComplete, initialCount]); // Dependencies include count, onComplete, and initialCount
 
   const formatTime = (time) => {
     const minutes = Math.floor(time / 60);
@@ -26,14 +43,12 @@ const CountdownTimer = ({ initialCount }) => {
 
 const styles = StyleSheet.create({
   timerContainer: {
-    // Add your styles here
     padding: 10,
     backgroundColor: '#000',
     borderRadius: 5,
     marginTop: 10,
   },
   timerText: {
-    // Add your styles here
     fontSize: 24,
     color: '#fff',
     textAlign: 'center',

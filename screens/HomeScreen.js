@@ -1,53 +1,155 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, View, Text, ImageBackground, Pressable, } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, View, Text, ImageBackground, Pressable, Alert, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-import CountdownTimer from '../CountdownTimer';
+import * as Font from 'expo-font';
+import { LinearGradient } from 'expo-linear-gradient';
+
 
 export default function HomeScreen({ navigation }) {
   const [categories, setCategories] = useState('music');
   const [difficulty, setDifficulty] = useState('easy');
-  const [limit, setLimit] = useState('1');
-  
+  const [limit, setLimit] = useState('2');
   const [menuVisible, setMenuVisible] = useState(false);
-  const onPressHandler = () => {
-    alert('Button pressed!');
+  const [initialCount, setInitialCount] = useState(0); // Initial countdown time
+  const [count, setCount] = useState(initialCount); // New state for countdown timer
+  const [isCountdownFinished, setIsCountdownFinished] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [score, setScore] = useState(0);
+  const [selectedAnswers, setSelectedAnswers] = useState({}); // Store selected answers per question
+  const [gameStarted, setGameStarted] = useState(false);
+
+  const fetchFonts = async () => {
+    await Font.loadAsync({
+      'Raleway-Regular': require('../assets/fonts/Raleway-VariableFont_wght.ttf'),
+    });
   };
 
-  const [countdown, setCountdown] = useState(30); // Set the initial countdown time
+  const [fontLoaded, setFontLoaded] = useState(false);
+
+
+
+  const queryString = `categories=${categories}&difficulty=${difficulty}&limit=${limit}`;
+  
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`https://the-trivia-api.com/api/questions?${queryString}`);
+        const data = await response.json();
+  
+        if (Array.isArray(data)) {
+          setQuestions(data);
+        } else {
+          console.error("Data fetched from API is undefined or not an array.");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+  
+    if (gameStarted) {
+      fetchData();
+    }
+  }, [queryString, gameStarted]); // Depend on gameStarted
+  
+  const handleAnswerPress = (questionIndex, answerIndex) => {
+    setSelectedAnswers(prevState => ({
+   ...prevState,
+      [questionIndex]: answerIndex,
+    }));
+  };
+
+  const handleSubmitAllAnswers = () => {
+    let correctAnswersCount = 0;
+    questions.forEach((question, questionIndex) => {
+      const correctAnswerIndex = question.incorrectAnswers.length;
+      const selectedAnswerIndex = selectedAnswers[questionIndex];
+
+      if (selectedAnswerIndex === correctAnswerIndex) {
+        correctAnswersCount++;
+      }
+    });
+
+    setScore(score + correctAnswersCount);
+    Alert.alert(`${correctAnswersCount} Correct`, `You got ${correctAnswersCount} answers right.`);
+  };
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
   };
 
-    // State to hold the fetched questions
-    const [questions, setQuestions] = useState([]);
+  const handlePress = async () => {
+    setGameStarted(false); // Temporarily set to false to trigger useEffect
+    setInitialCount(10); // Reset the countdown timer to 30 seconds
+    console.log(setInitialCount + 'passed')
+    Alert.alert('Game Started!', 'You have started the game.');
 
-    // Function to fetch questions
-    const fetchQuestions = async () => {
-      try {
-        const response = await fetch(`https://the-trivia-api.com/api/questions?categories=${categories}&difficulty=${difficulty}&limit=${limit}`);
-        const json = await response.json();
-        setQuestions(json.results);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+    // After setting gameStarted to false, immediately set it back to true
+    setTimeout(() => {
+      setGameStarted(true);
+    }, 0); // Use a timeout with delay 0 to ensure this runs after the current call stack clears
+  };
   
-    // Call fetchQuestions whenever categories, difficulty, or limit changes
-    useEffect(() => {
-      fetchQuestions();
-    }, [categories, difficulty, limit]);
+// Adjusted useEffect for countdown management
+useEffect(() => {
+  let timer;
+  
+  // Start the countdown if the game has started and initialCount is greater than 0
+  if (gameStarted && initialCount > 0) {
+    timer = setInterval(() => {
+      setCount(prevCount => {
+        // Update isCountdownFinished when the countdown reaches zero
+        if (prevCount <= 0) {
+          clearInterval(timer);
+          setIsCountdownFinished(true); // Set countdown finished to true
+          return prevCount; // Prevent further decrements
+        }
+        return prevCount - 1;
+      });
+    }, 1000);
+  } else if (!gameStarted) {
+    // If the game is not started, reset the count to initialCount
+    setCount(initialCount);
+  }
 
+  // Cleanup function to clear the interval
+  return () => clearInterval(timer);
+}, [gameStarted, initialCount]); // Depend on gameStarted and initialCount
+
+useEffect(() => {
+  // Call handleSubmitAllAnswers when the countdown finishes
+  if (isCountdownFinished) {
+    handleSubmitAllAnswers();
+    setIsCountdownFinished(false); // Reset the flag after calling handleSubmitAllAnswers
+  }
+}, [isCountdownFinished, handleSubmitAllAnswers]);
+
+
+useEffect(() => {
+  fetchFonts();
+  setFontLoaded(true);
+}, []);
+
+if (!fontLoaded) {
+  return (
+    <View>
+      <Text>Loading...</Text>
+    </View>
+  );
+}
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <>
-      <View style={styles.navigation}>
+      <LinearGradient
+        colors={['rgb(31, 24, 59)', 'rgb(178, 223, 182)']}
+        style={styles.navigation}
+      >
         <View style={styles.heading}>
           <Pressable onPress={() => navigation.navigate("Home")}>
-            <Text style={styles.title}>Polymath</Text>
+          <Text style={[styles.title, { fontFamily: 'Times New Roman' }]}>Polymath</Text>
+
           </Pressable>
-          <Text style={styles.subtitle}>Unleash Your Inner Genius</Text>
+          <Text style={[styles.subtitle, { fontFamily: 'Times New Roman' }]}>Unleash Your Inner Genius</Text>
         </View>
 
         <View style={styles.hamburgerPlay}>
@@ -58,7 +160,7 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.line}></View>
           </Pressable>
         </View>
-      </View>
+        </LinearGradient>
 
 {/* Navigation and sound button */}
 {menuVisible && (
@@ -132,32 +234,70 @@ export default function HomeScreen({ navigation }) {
             <Text style={styles.warningText}>Warning Text!</Text>
         </View>
         <View style={styles.countdownTimer}>
-        <CountdownTimer initialCount={countdown} />
+          <Text style={styles.countdownText}>{count}</Text>
         </View>
+
         <View>
-      <Pressable
-        onPress={onPressHandler}
-        style={styles.startGameButton}
-      >
-        <Text style={styles.startGameButtonText}>Start</Text>
-      </Pressable>
+        <Pressable
+          onPress={handlePress}
+          style={styles.startGameButton}
+        >
+          <Text style={styles.startGameButtonText}>Start</Text>
+        </Pressable>
     </View>
 
-    <View style={styles.questionContainer}>
-  {Array.isArray(questions) && questions.length > 0? (
-    questions.map((question, index) => (
-      <Text key={index} style={styles.questionText}>{question.questionText}</Text>
-    ))
-  ) : (
-    <Text style={styles.questionText}>No questions found.</Text>
-  )}
-</View>
-
+        {/* Display Questions */}
+        <View style={styles.scrollContainer}>
+      <ScrollView>
+        {questions.map((question, questionIndex) => (
+          <View key={questionIndex} style={styles.questionCard}>
+            <Text style={styles.questionText}>{question.question}</Text>
+            {question.incorrectAnswers.map((answer, answerIndex) => (
+              <Pressable
+                key={answerIndex}
+                onPress={() => handleAnswerPress(questionIndex, answerIndex)}
+              >
+                <Text
+                  style={[
+                    styles.answerText,
+                    selectedAnswers[questionIndex] === answerIndex && styles.selectedAnswer,
+                  ]}
+                >
+                  {answer}
+                </Text>
+              </Pressable>
+            ))}
+            <Pressable
+              onPress={() => handleAnswerPress(questionIndex, question.incorrectAnswers.length)}
+            >
+              <Text
+                style={[
+                  styles.answerText,
+                  selectedAnswers[questionIndex] === question.incorrectAnswers.length && styles.selectedAnswer,
+                ]}
+              >
+                {question.correctAnswer}
+              </Text>
+            </Pressable>
+          </View>
+        ))}
+      </ScrollView>
+    </View>
     
+        <View>
+          <Pressable
+            onPress={handleSubmitAllAnswers}
+            style={styles.submitAllButton}
+          >
+            <Text style={styles.submitAllButtonText}>Submit All</Text>
+          </Pressable>
+        </View>
+
       </ImageBackground>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -167,8 +307,14 @@ const styles = StyleSheet.create({
   backgroundImage: {
     flex: 1,
     resizeMode: 'cover', // or 'stretch'
-    //justifyContent: 'center',
+    justifyContent: 'center',
     zIndex: 0,
+  },
+  title: {
+    fontFamily: 'Times New Roman',
+  },
+  subtitle: {
+    fontFamily: 'Raleway-Regular',
   },
   pickerRow: {
     flexDirection: 'row',
@@ -196,10 +342,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     overflow: 'visible',
-    backgroundColor: '#f3f3f3', // Example background color
+    //borderRadius: 8,
+    paddingVertical: 45,
+    paddingHorizontal: 25,
+    width: '100%',
+    marginVertical: 10,
+    shadowColor: '#171717',
+    shadowOffset: { width: -2, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 5, // Only for iOS
+
   },
   heading: {
-    // styles for heading
+    fontFamily: 'Times New Roman',
   },
   title: {
     fontSize: 24,
@@ -243,6 +399,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: {
     fontSize: 20,
+    fontFamily: 'Raleway-Regular',
   },
   startGameButton: {
     backgroundColor: 'grey',
@@ -252,27 +409,74 @@ const styles = StyleSheet.create({
   },
   startGameButtonText: {
     color: 'white',
+   
   },
   questionContainer: {
-    // Add your styles here
+    flex: 1,
     margin: 10,
-    padding: 150,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-  },
-  questionText: {
-    // Add your styles here
-    fontSize: 18,
+    fontSize: 16,
   },
   countdownTimer: {
     alignItems: 'center',
+    padding: 10,
+    backgroundColor: '#000',
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  countdownText: {
+    fontSize: 24,
+    color: '#fff',
+    textAlign: 'center',
+    fontFamily: 'Raleway-Regular',
   },
   warningTextContainer: {
     alignItems: 'center',
+    fontFamily: 'Raleway-Regular',
   },
   warningText: {
     color: 'red',
     fontSize: 14,
-  }
+    margin: 5,
+    fontFamily: 'Raleway-Regular',
+
+  },
+  questionText: {
+    fontSize: 18,
+    margin: 10,
+    fontFamily: 'Raleway-Regular',
+  },
+  questionCard: {
+    flex: 1,
+    margin: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+  },
+  answerText: {
+    fontSize: 14,
+    margin: 5,
+    backgroundColor: 'orange',
+    padding: 8,
+    borderRadius: 5,
+    fontFamily: 'Raleway-Regular',
+  },
+  selectedAnswer: {
+    color: 'white',
+    backgroundColor: 'blue',
+  },
+  submitAllButton: {
+    padding: 10,
+    margin: 10,
+    backgroundColor: 'green',
+    textAlign: 'center',
+    borderRadius: 5,
+  },
+  submitAllButtonText: {
+    textAlign: 'center',
+    
+  },
+  scrollContainer: {
+    flex: 1,
+  },
 });
