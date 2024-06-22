@@ -32,6 +32,13 @@
         "files": [
           "./assets/fonts/Raleway-VariableFont_wght.ttf"
         ]
+      },
+
+      {
+        "name": "Times New Roman",
+        "files": [
+          "./assets/fonts/times_new_roman.ttf"
+        ]
       }
     ]
   }
