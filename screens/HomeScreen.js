@@ -3,7 +3,31 @@ import { SafeAreaView, StatusBar, StyleSheet, View, Text, ImageBackground, Press
 import { Picker } from '@react-native-picker/picker';
 import * as Font from 'expo-font';
 import { LinearGradient } from 'expo-linear-gradient';
-//import SimpleLottie from '../SimpleLotti';
+import { Audio } from 'expo-av';
+import SimpleLottie from '../SimpleLotti';
+
+// Initialize the first sound
+const startGameAudio = new Audio.Sound();
+
+// Initialize the second sound
+const selectAnswerAudio = new Audio.Sound();
+
+// Initialize the third sound
+const gameOverAudio = new Audio.Sound();
+
+async function loadSounds() {
+  try {
+    await startGameAudio.loadAsync(require('../assets/audio/newQuestion.mp3'));
+
+    await selectAnswerAudio.loadAsync(require('../assets/audio/answerSelect.mp3'));
+
+    await gameOverAudio.loadAsync(require('../assets/audio/gameOver.mp3'));
+
+    console.log('Audio files loaded successfully!');
+  } catch (error) {
+    console.error('Error loading audio files:', error);
+  }
+}
 
 // Utility function to shuffle an array
 function shuffleArray(array) {
@@ -17,7 +41,7 @@ function shuffleArray(array) {
 export default function HomeScreen({ navigation }) {
   const [categories, setCategories] = useState('music');
   const [difficulty, setDifficulty] = useState('easy');
-  const [limit, setLimit] = useState('2');
+  const [limit, setLimit] = useState('1');
   const [menuVisible, setMenuVisible] = useState(false);
   const [initialCount, setInitialCount] = useState(0); // Initial countdown time
   const [count, setCount] = useState(initialCount); // New state for countdown timer
@@ -28,6 +52,10 @@ export default function HomeScreen({ navigation }) {
   const [gameStarted, setGameStarted] = useState(false);
   const [feedback, setFeedback] = useState('');
   const [fontLoaded, setFontLoaded] = useState(false);
+
+  useEffect(() => {
+    loadSounds(); // Load both sounds when the component mounts
+  }, []);
 
   const fetchFonts = async () => {
     await Font.loadAsync({
@@ -54,6 +82,12 @@ export default function HomeScreen({ navigation }) {
           }));
 
           setQuestions(shuffledQuestions);
+              // Play the first sound after fetching data
+          try {
+            await startGameAudio.playAsync();
+           } catch (error) {
+             console.error(error);
+           }
         } else {
           console.error("Data fetched from API is undefined or not an array.");
         }
@@ -61,23 +95,37 @@ export default function HomeScreen({ navigation }) {
         console.error("Error fetching data:", error);
       }
     };
-
+    
     if (gameStarted) {
       fetchData();
+      
     }
   }, [queryString, gameStarted]); // Depend on gameStarted
   
-  const handleAnswerPress = (questionIndex, answerIndex) => {
+  const handleAnswerPress = async (questionIndex, answerIndex) => {
     setSelectedAnswers(prevState => ({
    ...prevState,
       [questionIndex]: answerIndex,
     }));
+        // Play the second sound when an answer is selected
+        try {
+          await selectAnswerAudio.playAsync();
+        } catch (error) {
+          console.error(error);
+        }
   };
 
   // Handle feedback submission
-  const handleSubmitAllAnswers = () => {
+  const handleSubmitAllAnswers = async () => {
     setQuestions([]); // Clear the questions state
     setFeedback(''); // Clear the feedback state
+
+    // Play the second sound when an answer is selected
+    try {
+      await gameOverAudio.playAsync();
+    } catch (error) {
+      console.error(error);
+    }
 
     let correctAnswersCount = 0;
     let incorrectAnswersClarification = [];
@@ -152,7 +200,6 @@ useEffect(() => {
   return () => clearInterval(timer);
 }, [gameStarted, initialCount]);
 
-
 useEffect(() => {
   // Call handleSubmitAllAnswers when the countdown finishes
   if (isCountdownFinished) {
@@ -164,10 +211,10 @@ useEffect(() => {
 if (!fontLoaded) {
   return (
     <View style={styles.lottie}>
-      {/*<SimpleLottie />
+      <SimpleLottie />
       <>
       <Text style= {styles.lottieText}>Polymath is Loading</Text>
-      </>*/}
+      </>
     </View>
   );
 }
@@ -180,7 +227,6 @@ if (!fontLoaded) {
         style={styles.navigation}
       >
         <View style={styles.heading}>
-          <Pressable onPress={() => navigation.navigate("Home")}>
           <Text
             style={{
               fontSize: 40,
@@ -195,7 +241,6 @@ if (!fontLoaded) {
           >
             Polymath
           </Text>
-          </Pressable>
 
             <Text
               style={{
@@ -212,8 +257,7 @@ if (!fontLoaded) {
             </Text>
         </View>
 
-        <View style={styles.hamburgerPlay}>
-          {/* Hamburger icon */}
+        <View>
           <Pressable style={styles.hamburger} onPress={toggleMenu}>
             <View style={styles.line}></View>
             <View style={styles.line}></View>
@@ -222,7 +266,6 @@ if (!fontLoaded) {
         </View>
         </LinearGradient>
 
-{/* Navigation and sound button */}
 {menuVisible && (
   <View style={styles.navBtn}>
     <Pressable
@@ -233,9 +276,9 @@ if (!fontLoaded) {
     </Pressable>
     <Pressable
       style={styles.menuItem}
-      onPress={() => navigation.navigate("Help")}
+      onPress={() => navigation.navigate("Contact")}
     >
-      <Text style={styles.menuItemText}>Help</Text>
+      <Text style={styles.menuItemText}>Contact</Text>
     </Pressable>
   </View>
 )}
@@ -257,8 +300,15 @@ if (!fontLoaded) {
       style={styles.picker}
     >
       <Picker.Item label="Music" value="music" />
+      <Picker.Item label="Sport and Leisure" value="sport_and_leisure" />
+      <Picker.Item label="Film and TV" value="film_and_tv" />
+      <Picker.Item label="Arts and Literature" value="arts_and_literature" />
+      <Picker.Item label="History" value="history" />
+      <Picker.Item label="Society and Culture" value="society_and_culture" />
+      <Picker.Item label="Science" value="science" />
       <Picker.Item label="Geography" value="geography" />
-      {/* ... other categories */}
+      <Picker.Item label="Food and Drink" value="food_and_drink" />
+      <Picker.Item label="General Knowledge" value="general_knowledge" />
     </Picker>
   </View>
 
@@ -286,7 +336,16 @@ if (!fontLoaded) {
     >
       <Picker.Item label="1 Question" value="1" />
       <Picker.Item label="2 Questions" value="2" />
-      {/* ... other limits */}
+      <Picker.Item label="3 Question" value="3" />
+      <Picker.Item label="4 Questions" value="4" />
+      <Picker.Item label="5 Question" value="5" />
+      <Picker.Item label="6 Questions" value="6" />
+      <Picker.Item label="7 Question" value="7" />
+      <Picker.Item label="8 Questions" value="8" />
+      <Picker.Item label="9 Question" value="9" />
+      <Picker.Item label="10 Questions" value="10" />
+      <Picker.Item label="15 Question" value="15" />
+      <Picker.Item label="20 Questions" value="20" />
     </Picker>
   </View>
 </View>
@@ -320,6 +379,7 @@ if (!fontLoaded) {
   <View key={questionIndex} style={styles.questionCard}>
     <Text style={styles.questionText}>{question.question}</Text>
     {question.answers.map((answer, answerIndex) => (
+      
       <Pressable
         key={answerIndex}
         onPress={() => handleAnswerPress(questionIndex, answerIndex)}
@@ -428,6 +488,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
+    color: 'white',
+    backgroundColor: '#011124',
+    width: '100%',
+    textAlign: 'center',
   },
   heading: {
     fontFamily: 'Times New Roman',
@@ -499,7 +563,7 @@ const styles = StyleSheet.create({
   countdownTimer: {
     alignItems: 'center',
     padding: 10,
-    backgroundColor: '#000',
+    backgroundColor: '#011124',
     borderRadius: 0,
     marginTop: 10,
   },
@@ -553,13 +617,14 @@ const styles = StyleSheet.create({
   submitAllButton: {
     padding: 10,
     margin: 10,
-    backgroundColor: 'green',
+    backgroundColor: '#021730',
     textAlign: 'center',
     borderRadius: 5,
   },
   submitAllButtonText: {
     textAlign: 'center',
     color: 'white',
+    fontSize: 14,
   },
   feedbackContainer: {
     padding: 10,

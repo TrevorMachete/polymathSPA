@@ -1,24 +1,27 @@
 {
   "expo": {
-    "name": "Polymath",
-    "slug": "Polymath",
+    "name": "polymath",
+    "slug": "polymath",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "cover",
+      "backgroundColor": "#ffffff",
+      "justifyContent": "center"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.macs.polymath"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.macs.polymath"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,13 +36,17 @@
           "./assets/fonts/Raleway-VariableFont_wght.ttf"
         ]
       },
-
       {
         "name": "Times New Roman",
         "files": [
           "./assets/fonts/times_new_roman.ttf"
         ]
       }
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "1cec1f0d-0b01-450d-b860-52c84ba5f924"
+      }
+    }
   }
 }
