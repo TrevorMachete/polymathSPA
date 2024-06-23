@@ -26,23 +26,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-font"
-    ],
-    "fonts": [
-      {
-        "name": "Raleway-Regular",
-        "files": [
-          "./assets/fonts/Raleway-VariableFont_wght.ttf"
-        ]
-      },
-      {
-        "name": "Times New Roman",
-        "files": [
-          "./assets/fonts/times_new_roman.ttf"
-        ]
-      }
-    ],
     "extra": {
       "eas": {
         "projectId": "1cec1f0d-0b01-450d-b860-52c84ba5f924"
@@ -50,3 +33,4 @@
     }
   }
 }
+
